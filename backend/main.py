@@ -11,6 +11,7 @@ import asyncio
 
 from . import storage
 from .council import run_full_council, generate_conversation_title, stage1_collect_responses, stage2_collect_rankings, stage3_synthesize_final, calculate_aggregate_rankings
+from .openrouter import get_credits
 
 app = FastAPI(title="LLM Council API")
 
@@ -197,6 +198,18 @@ async def send_message_stream(conversation_id: str, request: SendMessageRequest)
             "Connection": "keep-alive",
         }
     )
+
+
+@app.get("/api/credits")
+async def get_openrouter_credits():
+    """
+    Get OpenRouter account credits balance and usage information.
+    Returns credits data or error if unavailable.
+    """
+    credits_data = await get_credits()
+    if credits_data is None:
+        raise HTTPException(status_code=503, detail="Unable to fetch credits data")
+    return credits_data
 
 
 if __name__ == "__main__":
