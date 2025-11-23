@@ -12,6 +12,7 @@ import asyncio
 from . import storage
 from .council import run_full_council, generate_conversation_title, stage1_collect_responses, stage2_collect_rankings, stage3_synthesize_final, calculate_aggregate_rankings
 from .openrouter import get_credits
+from .config import COUNCIL_MODELS, CHAIRMAN_MODEL
 
 app = FastAPI(title="LLM Council API")
 
@@ -38,6 +39,7 @@ class CreateConversationRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     """Request to send a message in a conversation."""
     content: str
+    selected_models: List[str] = None  # Optional: specific models to use for this message
 
 
 class ConversationMetadata(BaseModel):
@@ -109,7 +111,8 @@ async def send_message(conversation_id: str, request: SendMessageRequest):
 
     # Run the 3-stage council process
     stage1_results, stage2_results, stage3_result, metadata = await run_full_council(
-        request.content
+        request.content,
+        request.selected_models
     )
 
     # Add assistant message with all stages
@@ -155,7 +158,7 @@ async def send_message_stream(conversation_id: str, request: SendMessageRequest)
 
             # Stage 1: Collect responses
             yield f"data: {json.dumps({'type': 'stage1_start'})}\n\n"
-            stage1_results = await stage1_collect_responses(request.content)
+            stage1_results = await stage1_collect_responses(request.content, request.selected_models)
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Collect rankings
@@ -210,6 +213,18 @@ async def get_openrouter_credits():
     if credits_data is None:
         raise HTTPException(status_code=503, detail="Unable to fetch credits data")
     return credits_data
+
+
+@app.get("/api/models")
+async def get_available_models():
+    """
+    Get list of available council models and chairman model.
+    Returns model configuration for the frontend.
+    """
+    return {
+        "council_models": COUNCIL_MODELS,
+        "chairman_model": CHAIRMAN_MODEL
+    }
 
 
 if __name__ == "__main__":

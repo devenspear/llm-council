@@ -5,20 +5,24 @@ from .openrouter import query_models_parallel, query_model
 from .config import COUNCIL_MODELS, CHAIRMAN_MODEL
 
 
-async def stage1_collect_responses(user_query: str) -> List[Dict[str, Any]]:
+async def stage1_collect_responses(user_query: str, selected_models: List[str] = None) -> List[Dict[str, Any]]:
     """
     Stage 1: Collect individual responses from all council models.
 
     Args:
         user_query: The user's question
+        selected_models: Optional list of specific models to use (defaults to COUNCIL_MODELS)
 
     Returns:
         List of dicts with 'model' and 'response' keys
     """
     messages = [{"role": "user", "content": user_query}]
 
+    # Use selected models or default to all council models
+    models_to_use = selected_models if selected_models else COUNCIL_MODELS
+
     # Query all models in parallel
-    responses = await query_models_parallel(COUNCIL_MODELS, messages)
+    responses = await query_models_parallel(models_to_use, messages)
 
     # Format results
     stage1_results = []
@@ -293,18 +297,19 @@ Title:"""
     return title
 
 
-async def run_full_council(user_query: str) -> Tuple[List, List, Dict, Dict]:
+async def run_full_council(user_query: str, selected_models: List[str] = None) -> Tuple[List, List, Dict, Dict]:
     """
     Run the complete 3-stage council process.
 
     Args:
         user_query: The user's question
+        selected_models: Optional list of specific models to use
 
     Returns:
         Tuple of (stage1_results, stage2_results, stage3_result, metadata)
     """
     # Stage 1: Collect individual responses
-    stage1_results = await stage1_collect_responses(user_query)
+    stage1_results = await stage1_collect_responses(user_query, selected_models)
 
     # If no models responded successfully, return error
     if not stage1_results:
