@@ -14,15 +14,14 @@ from .council import run_full_council, generate_conversation_title, stage1_colle
 
 app = FastAPI(title="LLM Council API")
 
-# Enable CORS for local development and Railway deployment
+# Enable CORS for local development, Railway, and Vercel deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
-        "https://*.railway.app",
     ],
-    allow_origin_regex=r"https://.*\.railway\.app",
+    allow_origin_regex=r"https://.*\.(railway\.app|vercel\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
